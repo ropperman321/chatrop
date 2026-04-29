@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Chatrop Vibe Session</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #e5ddd5;
+        }
+
+        #chat {
+            background: white;
+            height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+        }
+
+        .msg {
+            margin-bottom: 8px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            background: #dcf8c6;
+            width: fit-content;
+        }
+
+        input {
+            padding: 10px;
+            width: 70%;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 10px;
+            background: #25d366;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Chatrop: <span id="myId">Cargando...</span></h2>
+    <div id="chat"></div>
+    <input type="text" id="receiverId" placeholder="Para quién (ej: gemini)">
+    <input type="text" id="message" placeholder="Escribe un mensaje...">
+    <button onclick="send()">Enviar</button>
+
+    <script>
+        // Simulamos un ID de usuario para esta pestaña
+        const userId = "user_" + Math.floor(Math.random() * 1000);
+        document.getElementById('myId').innerText = userId;
+
+        let stompClient = null;
+
+        function connect() {
+            const socket = new SockJS('/ws-chat');
+            stompClient = Stomp.over(socket);
+            stompClient.connect({}, function (frame) {
+                console.log('Mi ID es: ' + userId); // <--- Añade esto
+                stompClient.subscribe('/topic/messages/' + userId, function (response) {
+                    console.log('¡MENSAJE RECIBIDO!', response.body); // <--- Y esto
+                    showGreeting(JSON.parse(response.body));
+                });
+            });
+        }
+
+        function send() {
+            const content = document.getElementById('message').value;
+            const receiverId = document.getElementById('receiverId').value;
+
+            // Enviamos el mensaje vía REST (nuestro controlador)
+            fetch('/api/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ senderId: userId, receiverId: receiverId, content: content })
+            });
+            document.getElementById('message').value = '';
+        }
+
+        function showGreeting(msg) {
+            const chat = document.getElementById('chat');
+            chat.innerHTML += `<div class="msg"><b>${msg.senderId}:</b> ${msg.content}</div>`;
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        connect();
+    </script>
+</body>
+
+</html>

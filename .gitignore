@@ -1,0 +1,7 @@
+/target/
+.DS_Store
+/.idea/
+/.vscode/
+*.class
+/bin/
+.mvn/wrapper/maven-wrapper.jar
