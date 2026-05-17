@@ -1,99 +1,202 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 
 <head>
-    <title>Chatrop Vibe Session</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatrop - Real Time</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
     <style>
-        body {
-            font-family: sans-serif;
-            padding: 20px;
-            background: #e5ddd5;
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        #chat {
-            background: white;
-            height: 300px;
-            overflow-y: scroll;
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-        }
-
-        .msg {
-            margin-bottom: 8px;
-            padding: 5px 10px;
-            border-radius: 5px;
-            background: #dcf8c6;
-            width: fit-content;
-        }
-
-        input {
-            padding: 10px;
-            width: 70%;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-
-        button {
-            padding: 10px;
-            background: #25d366;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
+        .message-fade {
+            animation: fadeIn 0.3s ease-out forwards;
         }
     </style>
 </head>
 
-<body>
-    <h2>Chatrop: <span id="myId">Cargando...</span></h2>
-    <div id="chat"></div>
-    <input type="text" id="receiverId" placeholder="Para quién (ej: gemini)">
-    <input type="text" id="message" placeholder="Escribe un mensaje...">
-    <button onclick="send()">Enviar</button>
+<body class="bg-slate-900 h-screen flex flex-col font-sans">
+
+    <div id="login-section" class="flex-1 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-96">
+            <h1 class="text-3xl font-black mb-2 text-center text-indigo-600">Chatrop</h1>
+            <p class="text-gray-400 text-center mb-6 text-sm">Hexagonal Real-Time Chat</p>
+            <input type="email" id="email" placeholder="Email"
+                class="w-full p-3 mb-4 border-2 border-gray-100 rounded-xl focus:border-indigo-500 outline-none transition-all">
+            <input type="password" id="password" placeholder="Contraseña"
+                class="w-full p-3 mb-6 border-2 border-gray-100 rounded-xl focus:border-indigo-500 outline-none transition-all">
+            <button onclick="handleLogin()"
+                class="w-full bg-indigo-600 text-white p-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all">Entrar</button>
+        </div>
+    </div>
+
+    <div id="chat-section"
+        class="hidden flex-1 flex flex-col h-full max-w-5xl mx-auto w-full bg-white shadow-2xl overflow-hidden">
+        <div class="bg-indigo-600 p-4 text-white flex justify-between items-center shadow-lg">
+            <div class="flex items-center gap-3">
+                <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                <span id="user-display" class="font-medium tracking-wide"></span>
+            </div>
+            <button onclick="handleLogout()"
+                class="text-xs bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition-all">Cerrar Sesión</button>
+        </div>
+
+        <div id="messages-container" class="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-50 flex flex-col">
+        </div>
+
+        <div class="p-4 bg-white border-t flex gap-3 items-center">
+            <input type="text" id="receiver-id" placeholder="ID Destinatario"
+                class="w-48 p-3 border-2 border-gray-100 rounded-xl text-sm focus:border-indigo-400 outline-none">
+            <input type="text" id="message-content" onkeypress="if(event.key==='Enter') handleSendMessage()"
+                placeholder="Escribe algo interesante..."
+                class="flex-1 p-3 border-2 border-gray-100 rounded-xl focus:border-indigo-400 outline-none">
+            <button onclick="handleSendMessage()"
+                class="bg-indigo-600 text-white p-3 rounded-xl hover:scale-105 active:scale-95 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+            </button>
+        </div>
+    </div>
 
     <script>
-        // Simulamos un ID de usuario para esta pestaña
-        const userId = "user_" + Math.floor(Math.random() * 1000);
-        document.getElementById('myId').innerText = userId;
+        // Detecta automáticamente si estamos en localhost, en una IP local o en la nube
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
+        // 1. URL para REST (peticiones HTTP)
+        // Si el frontend y backend están en el mismo servidor, basta con "/api"
+        const API_URL = window.location.origin + '/api';
+
+        // 2. URL para WebSockets (detecta si es seguro o no)
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const WS_URL = `${wsProtocol}//${window.location.host}/ws`;
+
+        // const API_URL = 'http://localhost:8080/api';
+        let token = localStorage.getItem('jwt_token');
         let stompClient = null;
+        let currentUserEmail = "";
 
-        function connect() {
-            const socket = new SockJS('/ws-chat');
-            stompClient = Stomp.over(socket);
-            stompClient.connect({}, function (frame) {
-                console.log('Mi ID es: ' + userId); // <--- Añade esto
-                stompClient.subscribe('/topic/messages/' + userId, function (response) {
-                    console.log('¡MENSAJE RECIBIDO!', response.body); // <--- Y esto
-                    showGreeting(JSON.parse(response.body));
-                });
-            });
-        }
+        window.onload = () => { if (token) showChat(); };
 
-        function send() {
-            const content = document.getElementById('message').value;
-            const receiverId = document.getElementById('receiverId').value;
-
-            // Enviamos el mensaje vía REST (nuestro controlador)
-            fetch('/api/messages', {
+        async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const response = await fetch(`${API_URL}/users/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ senderId: userId, receiverId: receiverId, content: content })
+                body: JSON.stringify({ email, password })
             });
-            document.getElementById('message').value = '';
+
+            if (response.ok) {
+                const data = await response.json();
+                token = data.token;
+                localStorage.setItem('jwt_token', token);
+                showChat();
+            } else {
+                alert('Credenciales incorrectas');
+            }
         }
 
-        function showGreeting(msg) {
-            const chat = document.getElementById('chat');
-            chat.innerHTML += `<div class="msg"><b>${msg.senderId}:</b> ${msg.content}</div>`;
-            chat.scrollTop = chat.scrollHeight;
+        function showChat() {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('chat-section').classList.remove('hidden');
+
+            // 1. Obtener mi info
+            fetch(`${API_URL}/users/me`, { headers: { 'Authorization': `Bearer ${token}` } })
+                .then(r => r.text())
+                .then(text => {
+                    currentUserEmail = text.split(': ')[1];
+                    document.getElementById('user-display').innerText = text;
+                });
+
+            // 2. Cargar historial
+            loadMessages();
+
+            // 3. Conectar WebSocket para tiempo real
+            connectWebSocket();
         }
 
-        connect();
+        function connectWebSocket() {
+            stompClient = new StompJs.Client({
+                brokerURL: WS_URL,
+                onConnect: () => {
+                    console.log('Conectado al WebSocket de Chatrop');
+                    stompClient.subscribe('/topic/messages', (message) => {
+                        const msg = JSON.parse(message.body);
+                        appendMessageToUI(msg);
+                    });
+                }
+            });
+            stompClient.activate();
+        }
+
+        async function loadMessages() {
+            console.log("Token actual enviado:", token); // <-- AÑADE ESTO
+            if (!token) {
+                console.error("¡No hay token! Por eso da 403");
+                return;
+            }
+            const response = await fetch(`${API_URL}/messages/all`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const messages = await response.json();
+                document.getElementById('messages-container').innerHTML = '';
+                messages.forEach(appendMessageToUI);
+            }
+        }
+
+        function appendMessageToUI(m) {
+            const container = document.getElementById('messages-container');
+            // Ahora comparamos con el email directamente
+            const isMe = m.senderEmail === currentUserEmail;
+
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `max-w-[80%] p-3 rounded-2xl shadow-sm message-fade ${isMe ? 'bg-indigo-600 text-white self-end rounded-tr-none' : 'bg-white text-gray-800 self-start rounded-tl-none'}`;
+
+            msgDiv.innerHTML = `
+        <div class="text-[10px] opacity-70 mb-1 font-bold">${isMe ? 'Tú' : m.senderEmail}</div>
+        <div class="text-sm font-medium">${m.content}</div>
+        <div class="text-[9px] opacity-50 text-right mt-1">${new Date(m.timestamp).toLocaleTimeString()}</div>
+    `;
+
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function handleSendMessage() {
+            const receiverId = document.getElementById('receiver-id').value;
+            const content = document.getElementById('message-content').value;
+            if (!content) return;
+
+            await fetch(`${API_URL}/messages/send`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ receiverId, content })
+            });
+            document.getElementById('message-content').value = '';
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('jwt_token');
+            location.reload();
+        }
     </script>
 </body>
 
