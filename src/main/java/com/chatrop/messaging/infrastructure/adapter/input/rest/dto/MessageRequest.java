@@ -5,5 +5,6 @@ import lombok.Data;
 @Data
 public class MessageRequest {
     private String receiverId;
+    private String groupId; // Nuevo campo para el ID del grupo (para mensajes grupales)
     private String content;
 }

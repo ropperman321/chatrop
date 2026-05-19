@@ -1,10 +1,9 @@
 package com.chatrop.messaging.infrastructure.adapter.output.persistence;
 
 import com.chatrop.messaging.domain.model.Message;
-import com.chatrop.messaging.domain.port.MessageRepository;
-import com.chatrop.messaging.infrastructure.adapter.output.persistence.mapper.MessagePersistenceMapper;
-
-import lombok.RequiredArgsConstructor;
+import com.chatrop.messaging.domain.repository.MessageRepository;
+import com.chatrop.messaging.infrastructure.adapter.output.persistence.entity.MessageEntity;
+import com.chatrop.messaging.infrastructure.adapter.output.persistence.repository.JpaMessageRepository;
 import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Optional;
@@ -12,29 +11,65 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
-@RequiredArgsConstructor
 public class PostgresMessageRepositoryAdapter implements MessageRepository {
 
-    private final JpaMessageRepository jpaRepository;
-    private final MessagePersistenceMapper mapper;
+    private final JpaMessageRepository jpaMessageRepository;
 
-    @SuppressWarnings("null")
+    // Ya no inyectamos MessagePersistenceMapper, el adaptador se auto-gestiona
+    public PostgresMessageRepositoryAdapter(JpaMessageRepository jpaMessageRepository) {
+        this.jpaMessageRepository = jpaMessageRepository;
+    }
+
     @Override
     public Message save(Message message) {
-        return mapper.toDomain(jpaRepository.save(mapper.toEntity(message)));
+        return toDomain(jpaMessageRepository.save(toEntity(message)));
     }
 
     @SuppressWarnings("null")
     @Override
     public Optional<Message> findById(String id) {
-        return jpaRepository.findById(UUID.fromString(id)).map(mapper::toDomain);
+        return jpaMessageRepository.findById(UUID.fromString(id)).map(this::toDomain);
     }
 
     @Override
     public List<Message> findChatHistory(String user1, String user2) {
-        return jpaRepository.findMessagesBetweenUsers(user1, user2)
+        return jpaMessageRepository.findMessagesBetweenUsers(user1, user2)
                 .stream()
-                .map(mapper::toDomain)
+                .map(this::toDomain)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Message> findByGroupId(String groupId) {
+        // La consulta ya viene filtrada y ordenada desde la base de datos de forma
+        // ultra eficiente
+        return jpaMessageRepository.findByGroupIdOrderByTimestampAsc(groupId)
+                .stream()
+                .map(this::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    private MessageEntity toEntity(Message domain) {
+        MessageEntity entity = new MessageEntity();
+        entity.setId(domain.getId());
+        entity.setSenderId(domain.getSenderId());
+        entity.setSenderEmail(domain.getSenderEmail());
+        entity.setReceiverId(domain.getReceiverId());
+        entity.setGroupId(domain.getGroupId());
+        entity.setContent(domain.getContent());
+        entity.setTimestamp(domain.getTimestamp());
+        return entity;
+    }
+
+    private Message toDomain(MessageEntity entity) {
+        return Message.builder()
+                .id(entity.getId())
+                .senderId(entity.getSenderId())
+                .senderEmail(entity.getSenderEmail())
+                .receiverId(entity.getReceiverId())
+                .groupId(entity.getGroupId())
+                .content(entity.getContent())
+                .timestamp(entity.getTimestamp())
+                .build();
     }
 }

@@ -1,4 +1,4 @@
-package com.chatrop.infrastructure.adapter;
+package com.chatrop.messaging.infrastructure.adapter.output;
 
 import com.chatrop.messaging.domain.port.UserValidatorPort;
 import com.chatrop.users.domain.port.UserRepository;

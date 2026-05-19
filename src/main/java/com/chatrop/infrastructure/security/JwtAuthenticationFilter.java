@@ -1,4 +1,4 @@
-package com.chatrop.users.infrastructure.adapter.input.rest.security;
+package com.chatrop.infrastructure.security;
 
 import com.chatrop.users.domain.port.TokenService;
 import jakarta.servlet.FilterChain;
@@ -28,13 +28,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @SuppressWarnings("null") FilterChain filterChain) throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
-
-        // // Dentro de doFilterInternal...
-        // if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-        // filterChain.doFilter(request, response); // Deja que Spring Security maneje
-        // el fallo
-        // return;
-        // }
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);

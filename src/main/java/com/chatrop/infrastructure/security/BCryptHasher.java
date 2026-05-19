@@ -1,4 +1,4 @@
-package com.chatrop.users.infrastructure.adapter.output.security;
+package com.chatrop.infrastructure.security;
 
 import com.chatrop.users.domain.port.PasswordHasher;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;

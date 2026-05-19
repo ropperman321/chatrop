@@ -1,4 +1,4 @@
-package com.chatrop.users.infrastructure.adapter;
+package com.chatrop.infrastructure.security;
 
 import com.chatrop.users.domain.model.User;
 import com.chatrop.users.domain.port.TokenService;

@@ -16,10 +16,10 @@ public class LoginUserUseCase {
         this.tokenService = tokenService;
     }
 
-    public String execute(String email, String plainPassword) {
+    public LoginResult execute(String email, String plainPassword) {
         return userRepository.findByEmail(email)
                 .filter(user -> passwordHasher.check(plainPassword, user.getPasswordHash()))
-                .map(tokenService::generateToken) // <--- Generamos el pasaporte
+                .map(user -> new LoginResult(tokenService.generateToken(user), user.getId().toString()))
                 .orElseThrow(() -> new RuntimeException("Credenciales inválidas"));
     }
 }

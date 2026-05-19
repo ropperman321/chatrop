@@ -42,12 +42,14 @@ public class UserController {
             System.out.println("Intentando login para: " + request.getEmail()); // LOG DE PRUEBA
 
             // Ahora execute devuelve directamente el String del token
-            String token = loginUserUseCase.execute(request.getEmail(), request.getPassword());
+            com.chatrop.users.application.usecase.LoginResult result = loginUserUseCase.execute(request.getEmail(),
+                    request.getPassword());
 
             // Devolvemos el token en el cuerpo de la respuesta
-            return ResponseEntity.ok(new LoginResponse(token));
+            return ResponseEntity.ok(new LoginResponse(result.getToken(), result.getUserId()));
 
         } catch (RuntimeException e) {
+
             System.err.println("Error en login: " + e.getMessage()); // ESTO SALDRÁ EN ROJO EN TU LOG
 
             // Si las credenciales fallan, capturamos la excepción del caso de uso

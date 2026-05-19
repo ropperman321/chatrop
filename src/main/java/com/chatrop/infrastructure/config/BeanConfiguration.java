@@ -1,8 +1,8 @@
-package com.chatrop.infrastructure.adapter;
+package com.chatrop.infrastructure.config;
 
 import com.chatrop.messaging.application.usecase.GetChatHistoryUseCase;
 import com.chatrop.messaging.application.usecase.SendMessageUseCase;
-import com.chatrop.messaging.domain.port.MessageRepository;
+import com.chatrop.messaging.domain.repository.MessageRepository;
 import com.chatrop.users.application.usecase.LoginUserUseCase;
 import com.chatrop.users.application.usecase.RegisterUserUseCase;
 import com.chatrop.users.domain.port.PasswordHasher;
@@ -48,5 +48,11 @@ public class BeanConfiguration {
             MessageRepository messageRepository,
             UserRepository userRepository) {
         return new GetChatHistoryUseCase(messageRepository, userRepository);
+    }
+
+    @Bean
+    public com.chatrop.messaging.application.usecase.GetGroupHistoryUseCase getGroupHistoryUseCase(
+            MessageRepository messageRepository) {
+        return new com.chatrop.messaging.application.usecase.GetGroupHistoryUseCase(messageRepository);
     }
 }

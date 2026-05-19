@@ -1,7 +1,7 @@
 package com.chatrop.messaging.application.usecase;
 
 import com.chatrop.messaging.domain.model.Message;
-import com.chatrop.messaging.domain.port.MessageRepository;
+import com.chatrop.messaging.domain.repository.MessageRepository;
 import com.chatrop.users.domain.model.User;
 import com.chatrop.users.domain.port.UserRepository;
 import java.time.LocalDateTime;
@@ -16,7 +16,7 @@ public class SendMessageUseCase {
         this.userRepository = userRepository;
     }
 
-    public Message execute(String senderEmail, String receiverId, String content) {
+    public Message execute(String senderEmail, String receiverId, String groupId, String content) {
         // 1. Buscamos al emisor real por el email del token
         User sender = userRepository.findByEmail(senderEmail)
                 .orElseThrow(() -> new RuntimeException("Emisor no encontrado"));
@@ -27,6 +27,7 @@ public class SendMessageUseCase {
                 .senderId(sender.getId().toString()) // Su UUID real de la DB
                 .senderEmail(senderEmail) // Agregamos el email del sender
                 .receiverId(receiverId)
+                .groupId(groupId)
                 .content(content)
                 .timestamp(LocalDateTime.now())
                 .build();

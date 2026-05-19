@@ -1,7 +1,7 @@
 package com.chatrop.messaging.application.usecase;
 
 import com.chatrop.messaging.domain.model.Message;
-import com.chatrop.messaging.domain.port.MessageRepository;
+import com.chatrop.messaging.domain.repository.MessageRepository;
 import com.chatrop.users.domain.model.User;
 import com.chatrop.users.domain.port.UserRepository;
 import java.util.List;
@@ -18,7 +18,7 @@ public class GetChatHistoryUseCase {
     public List<Message> execute(String userEmail, String otherUserId) {
         User currentUser = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        
+
         return messageRepository.findChatHistory(currentUser.getId().toString(), otherUserId);
     }
 }
