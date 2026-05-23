@@ -2,7 +2,12 @@ package com.chatrop.infrastructure.config;
 
 import com.chatrop.messaging.application.usecase.GetChatHistoryUseCase;
 import com.chatrop.messaging.application.usecase.SendMessageUseCase;
+import com.chatrop.messaging.application.usecase.MarkAsReadUseCase;
+import com.chatrop.messaging.application.usecase.GetUnreadCountsUseCase;
+import com.chatrop.messaging.application.usecase.GetDirectChatsUseCase;
 import com.chatrop.messaging.domain.repository.MessageRepository;
+import com.chatrop.messaging.domain.repository.GroupRepository;
+import com.chatrop.messaging.domain.repository.MessageReadStateRepository;
 import com.chatrop.users.application.usecase.LoginUserUseCase;
 import com.chatrop.users.application.usecase.RegisterUserUseCase;
 import com.chatrop.users.domain.port.PasswordHasher;
@@ -54,5 +59,27 @@ public class BeanConfiguration {
     public com.chatrop.messaging.application.usecase.GetGroupHistoryUseCase getGroupHistoryUseCase(
             MessageRepository messageRepository) {
         return new com.chatrop.messaging.application.usecase.GetGroupHistoryUseCase(messageRepository);
+    }
+
+    @Bean
+    public MarkAsReadUseCase markAsReadUseCase(
+            MessageReadStateRepository messageReadStateRepository,
+            UserRepository userRepository) {
+        return new MarkAsReadUseCase(messageReadStateRepository, userRepository);
+    }
+
+    @Bean
+    public GetUnreadCountsUseCase getUnreadCountsUseCase(
+            MessageRepository messageRepository,
+            GroupRepository groupRepository,
+            UserRepository userRepository) {
+        return new GetUnreadCountsUseCase(messageRepository, groupRepository, userRepository);
+    }
+
+    @Bean
+    public GetDirectChatsUseCase getDirectChatsUseCase(
+            MessageRepository messageRepository,
+            UserRepository userRepository) {
+        return new GetDirectChatsUseCase(messageRepository, userRepository);
     }
 }

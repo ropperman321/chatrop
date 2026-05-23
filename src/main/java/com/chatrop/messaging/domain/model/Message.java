@@ -8,17 +8,19 @@ public class Message {
     private final String senderId;
     private final String senderEmail;
     private final String receiverId; // Puede ser null si es para un grupo
+    private final String receiverEmail; // Puede ser null si es para un grupo
     private final String groupId;    // NUEVO: null si es un chat privado (DM)
     private final String content;
     private final LocalDateTime timestamp;
 
     // Constructor privado para el builder actualizado
-    private Message(UUID id, String senderId, String senderEmail, String receiverId, String groupId, String content,
+    private Message(UUID id, String senderId, String senderEmail, String receiverId, String receiverEmail, String groupId, String content,
             LocalDateTime timestamp) {
         this.id = id;
         this.senderId = senderId;
         this.senderEmail = senderEmail;
         this.receiverId = receiverId;
+        this.receiverEmail = receiverEmail;
         this.groupId = groupId;
         this.content = content;
         this.timestamp = timestamp;
@@ -39,6 +41,10 @@ public class Message {
 
     public String getReceiverId() {
         return receiverId;
+    }
+
+    public String getReceiverEmail() {
+        return receiverEmail;
     }
 
     public String getGroupId() {
@@ -63,6 +69,7 @@ public class Message {
         private String senderId;
         private String senderEmail;
         private String receiverId;
+        private String receiverEmail;
         private String groupId;
         private String content;
         private LocalDateTime timestamp;
@@ -87,6 +94,11 @@ public class Message {
             return this;
         }
 
+        public Builder receiverEmail(String receiverEmail) {
+            this.receiverEmail = receiverEmail;
+            return this;
+        }
+
         public Builder groupId(String groupId) {
             this.groupId = groupId;
             return this;
@@ -103,7 +115,7 @@ public class Message {
         }
 
         public Message build() {
-            return new Message(id, senderId, senderEmail, receiverId, groupId, content, timestamp);
+            return new Message(id, senderId, senderEmail, receiverId, receiverEmail, groupId, content, timestamp);
         }
     }
 
@@ -114,6 +126,7 @@ public class Message {
                 ", senderId='" + senderId + '\'' +
                 ", senderEmail='" + senderEmail + '\'' +
                 ", receiverId='" + receiverId + '\'' +
+                ", receiverEmail='" + receiverEmail + '\'' +
                 ", groupId='" + groupId + '\'' +
                 ", content='" + content + '\'' +
                 ", timestamp=" + timestamp +

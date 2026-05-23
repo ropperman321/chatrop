@@ -21,12 +21,22 @@ public class SendMessageUseCase {
         User sender = userRepository.findByEmail(senderEmail)
                 .orElseThrow(() -> new RuntimeException("Emisor no encontrado"));
 
+        String resolvedReceiverId = null;
+        String resolvedReceiverEmail = null;
+        if (receiverId != null && !receiverId.trim().isEmpty() && (groupId == null || groupId.trim().isEmpty())) {
+            User receiver = userRepository.findByEmail(receiverId)
+                    .orElseThrow(() -> new RuntimeException("Receptor no encontrado"));
+            resolvedReceiverId = receiver.getId().toString();
+            resolvedReceiverEmail = receiver.getEmail();
+        }
+
         // 2. Construimos el mensaje con el ID real del emisor
         Message message = Message.builder()
                 .id(UUID.randomUUID())
                 .senderId(sender.getId().toString()) // Su UUID real de la DB
                 .senderEmail(senderEmail) // Agregamos el email del sender
-                .receiverId(receiverId)
+                .receiverId(resolvedReceiverId)
+                .receiverEmail(resolvedReceiverEmail)
                 .groupId(groupId)
                 .content(content)
                 .timestamp(LocalDateTime.now())

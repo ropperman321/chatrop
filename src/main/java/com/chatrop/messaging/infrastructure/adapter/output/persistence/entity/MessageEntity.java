@@ -22,6 +22,9 @@ public class MessageEntity {
     @Column(nullable = true) // Puede ser null si el mensaje va a un grupo
     private String receiverId;
 
+    @Column(nullable = true) // Puede ser null si el mensaje va a un grupo o si no se especificó
+    private String receiverEmail;
+
     @Column(nullable = true) // Almacena el ID del grupo (null si es un chat privado)
     private String groupId;
 

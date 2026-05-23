@@ -17,4 +17,8 @@ public interface MessageRepository {
 
     // Dentro de MessageRepository.java
     java.util.List<Message> findByGroupId(String groupId);
+
+    List<Object[]> findActivePeersForUser(String userId);
+    long countUnreadGroupMessages(String userId, String groupId);
+    long countUnreadDirectMessages(String userId, String peerId);
 }

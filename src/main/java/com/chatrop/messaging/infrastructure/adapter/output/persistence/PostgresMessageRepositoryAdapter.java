@@ -49,12 +49,28 @@ public class PostgresMessageRepositoryAdapter implements MessageRepository {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<Object[]> findActivePeersForUser(String userId) {
+        return jpaMessageRepository.findActivePeersForUser(userId);
+    }
+
+    @Override
+    public long countUnreadGroupMessages(String userId, String groupId) {
+        return jpaMessageRepository.countUnreadGroupMessages(userId, groupId);
+    }
+
+    @Override
+    public long countUnreadDirectMessages(String userId, String peerId) {
+        return jpaMessageRepository.countUnreadDirectMessages(userId, peerId);
+    }
+
     private MessageEntity toEntity(Message domain) {
         MessageEntity entity = new MessageEntity();
         entity.setId(domain.getId());
         entity.setSenderId(domain.getSenderId());
         entity.setSenderEmail(domain.getSenderEmail());
         entity.setReceiverId(domain.getReceiverId());
+        entity.setReceiverEmail(domain.getReceiverEmail());
         entity.setGroupId(domain.getGroupId());
         entity.setContent(domain.getContent());
         entity.setTimestamp(domain.getTimestamp());
@@ -67,6 +83,7 @@ public class PostgresMessageRepositoryAdapter implements MessageRepository {
                 .senderId(entity.getSenderId())
                 .senderEmail(entity.getSenderEmail())
                 .receiverId(entity.getReceiverId())
+                .receiverEmail(entity.getReceiverEmail())
                 .groupId(entity.getGroupId())
                 .content(entity.getContent())
                 .timestamp(entity.getTimestamp())

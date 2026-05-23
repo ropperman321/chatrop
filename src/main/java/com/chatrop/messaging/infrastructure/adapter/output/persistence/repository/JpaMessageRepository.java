@@ -24,4 +24,20 @@ public interface JpaMessageRepository extends JpaRepository<MessageEntity, UUID>
 
     // Dentro de JpaMessageRepository.java
     java.util.List<MessageEntity> findByGroupIdOrderByTimestampAsc(String groupId);
+
+    @Query("SELECT DISTINCT " +
+           "CASE WHEN m.senderId = :userId THEN m.receiverId ELSE m.senderId END, " +
+           "CASE WHEN m.senderId = :userId THEN m.receiverEmail ELSE m.senderEmail END " +
+           "FROM MessageEntity m WHERE (m.senderId = :userId OR m.receiverId = :userId) AND m.groupId IS NULL")
+    List<Object[]> findActivePeersForUser(@Param("userId") String userId);
+
+    @Query("SELECT COUNT(m) FROM MessageEntity m WHERE m.groupId = :groupId AND m.senderId <> :userId AND " +
+           "(m.timestamp > (SELECT r.lastReadTimestamp FROM MessageReadStateEntity r WHERE r.userId = :userId AND r.groupId = :groupId) " +
+           "OR NOT EXISTS (SELECT r FROM MessageReadStateEntity r WHERE r.userId = :userId AND r.groupId = :groupId))")
+    long countUnreadGroupMessages(@Param("userId") String userId, @Param("groupId") String groupId);
+
+    @Query("SELECT COUNT(m) FROM MessageEntity m WHERE m.groupId IS NULL AND m.senderId = :peerId AND m.receiverId = :userId AND " +
+           "(m.timestamp > (SELECT r.lastReadTimestamp FROM MessageReadStateEntity r WHERE r.userId = :userId AND r.peerId = :peerId) " +
+           "OR NOT EXISTS (SELECT r FROM MessageReadStateEntity r WHERE r.userId = :userId AND r.peerId = :peerId))")
+    long countUnreadDirectMessages(@Param("userId") String userId, @Param("peerId") String peerId);
 }

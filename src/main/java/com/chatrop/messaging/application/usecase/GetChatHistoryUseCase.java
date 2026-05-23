@@ -15,10 +15,13 @@ public class GetChatHistoryUseCase {
         this.userRepository = userRepository;
     }
 
-    public List<Message> execute(String userEmail, String otherUserId) {
+    public List<Message> execute(String userEmail, String otherUserEmail) {
         User currentUser = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        return messageRepository.findChatHistory(currentUser.getId().toString(), otherUserId);
+        User otherUser = userRepository.findByEmail(otherUserEmail)
+                .orElseThrow(() -> new RuntimeException("Usuario receptor no encontrado"));
+
+        return messageRepository.findChatHistory(currentUser.getId().toString(), otherUser.getId().toString());
     }
 }
