@@ -17,22 +17,10 @@ public class GetDirectChatsUseCase {
     }
 
     public List<DirectChat> execute(String userEmail) {
-        User currentUser = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        String userId = currentUser.getId().toString();
-
-        List<Object[]> peers = messageRepository.findActivePeersForUser(userId);
-
-        return peers.stream()
-                .map(row -> {
-                    String peerId = (String) row[0];
-                    String peerEmail = (String) row[1];
-                    if (peerId == null || peerEmail == null) {
-                        return null;
-                    }
-                    return new DirectChat(peerId, peerEmail);
-                })
-                .filter(Objects::nonNull)
+        List<User> allUsers = userRepository.findAll();
+        return allUsers.stream()
+                .filter(u -> !u.getEmail().equalsIgnoreCase(userEmail))
+                .map(u -> new DirectChat(u.getId().toString(), u.getEmail()))
                 .collect(Collectors.toList());
     }
 

@@ -88,7 +88,7 @@ public class ChatController {
         // Auto-marcar como leído al cargar historial de grupo
         markAsReadUseCase.execute(email, groupId, null);
         
-        return ResponseEntity.ok(getGroupHistoryUseCase.execute(groupId));
+        return ResponseEntity.ok(getGroupHistoryUseCase.execute(email, groupId));
     }
 
     @PostMapping("/read")

@@ -57,6 +57,14 @@
         /* ── Safe area ── */
         .pb-safe { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
         .pt-safe { padding-top: max(12px, env(safe-area-inset-top)); }
+
+        @media (min-width: 768px) {
+            #panel-list, #panel-chat {
+                transform: none !important;
+                opacity: 1 !important;
+                pointer-events: auto !important;
+            }
+        }
     </style>
 </head>
 
@@ -117,13 +125,22 @@
                 <h1 class="text-lg font-black grad-text leading-none">Chatrop</h1>
                 <p id="user-display" class="text-[11px] text-slate-500 mt-0.5 truncate max-w-[200px]">—</p>
             </div>
-            <button onclick="logout()" title="Cerrar sesión"
-                    class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-900 hover:bg-rose-900/30 text-slate-500 hover:text-rose-400 transition-all flex-shrink-0">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                </svg>
-            </button>
+            <div class="flex">
+                <button onclick="(function(){ const n=prompt('Nombre del nuevo grupo:'); if(n) createGroup(n); })()" title="Crear grupo"
+                        class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-500 hover:text-indigo-400 transition-all flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M12 4v16m8-8H4"/>
+                    </svg>
+                </button>
+                <button onclick="logout()" title="Cerrar sesión"
+                        class="ml-2 w-9 h-9 flex items-center justify-center rounded-xl bg-slate-900 hover:bg-rose-900/30 text-slate-500 hover:text-rose-400 transition-all flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <!-- Conversation list -->
@@ -188,6 +205,15 @@
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round"
                           d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                </svg>
+            </button>
+            <!-- Leave group -->
+            <button id="leave-group-btn" onclick="leaveCurrentGroup()" title="Salir del grupo"
+                    class="hidden w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl
+                           bg-rose-600/15 hover:bg-rose-600/30 text-rose-400 transition-all">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
             </button>
         </div>
@@ -561,6 +587,8 @@ function showChatPanel() {
 function goBackToList() {
     activeChatType = null;
     activeTargetId = null;
+    // Hide leave button when leaving group view
+    q('leave-group-btn').classList.add('hidden');
     const list = q('panel-list');
     const chat = q('panel-chat');
     chat.style.transform  = 'translateX(100%)';
@@ -582,6 +610,7 @@ function selectGroup(groupId, groupName) {
     activeTargetId = groupId;
     setChatHeader(groupName, 'Sala de grupo', '#', 'bg-indigo-500/20 text-indigo-400');
     q('add-member-btn').classList.remove('hidden');
+    q('leave-group-btn').classList.remove('hidden');
     enableInput();
     loadHistory(`/api/messages/history/group/${groupId}`);
     showChatPanel();
@@ -593,6 +622,7 @@ function selectDirect(email) {
     activeTargetId = email;
     setChatHeader(email, 'Chat privado', email[0].toUpperCase(), 'bg-emerald-500/20 text-emerald-400');
     q('add-member-btn').classList.add('hidden');
+    q('leave-group-btn').classList.add('hidden');
     enableInput();
     loadHistory(`/api/messages/history/${email}`);
     showChatPanel();
@@ -627,6 +657,21 @@ function openAddMemberModal() {
     if (!email?.trim()) return;
     api(`/api/groups/${activeTargetId}/members`, 'POST', { email: email.trim() })
         .then(r => r.ok ? alert('¡Añadido!') : alert('Error: verifica que el usuario exista'));
+}
+
+// Leave current group
+async function leaveCurrentGroup() {
+    if (activeChatType !== 'GROUP') return;
+    if (!confirm('¿Estás seguro de que quieres salir del grupo?')) return;
+    const email = currentUserEmail; // user leaving is the current user
+    const res = await api(`/api/groups/${activeTargetId}/members`, 'DELETE', { email });
+    if (res.ok) {
+        alert('Has salido del grupo');
+        // Go back to list view (user can refresh manually)
+        goBackToList();
+    } else {
+        alert('Error al salir del grupo');
+    }
 }
 
 // ── Messages ───────────────────────────────────────────

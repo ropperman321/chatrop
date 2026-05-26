@@ -3,6 +3,7 @@ package com.chatrop.messaging.infrastructure.adapter.input.rest;
 import com.chatrop.messaging.application.usecase.AddMemberToGroupUseCase;
 import com.chatrop.messaging.application.usecase.CreateGroupUseCase;
 import com.chatrop.messaging.application.usecase.GetGroupsForUserUseCase;
+import com.chatrop.messaging.application.usecase.LeaveGroupUseCase;
 import com.chatrop.messaging.domain.model.Group;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,13 +19,16 @@ public class GroupController {
     private final CreateGroupUseCase createGroupUseCase;
     private final AddMemberToGroupUseCase addMemberToGroupUseCase;
     private final GetGroupsForUserUseCase getGroupsForUserUseCase;
+    private final LeaveGroupUseCase leaveGroupUseCase;
 
-    public GroupController(CreateGroupUseCase createGroupUseCase, 
-                           AddMemberToGroupUseCase addMemberToGroupUseCase, 
-                           GetGroupsForUserUseCase getGroupsForUserUseCase) {
+    public GroupController(CreateGroupUseCase createGroupUseCase,
+                           AddMemberToGroupUseCase addMemberToGroupUseCase,
+                           GetGroupsForUserUseCase getGroupsForUserUseCase,
+                           LeaveGroupUseCase leaveGroupUseCase) {
         this.createGroupUseCase = createGroupUseCase;
         this.addMemberToGroupUseCase = addMemberToGroupUseCase;
         this.getGroupsForUserUseCase = getGroupsForUserUseCase;
+        this.leaveGroupUseCase = leaveGroupUseCase;
     }
 
     // Obtener todos los grupos del usuario autenticado
@@ -58,4 +62,16 @@ public class GroupController {
         
         return ResponseEntity.ok(addMemberToGroupUseCase.execute(groupId, userEmail));
     }
+
+    // Salir de un grupo
+    @DeleteMapping("/{groupId}/members")
+    public ResponseEntity<Group> leaveGroup(@PathVariable String groupId, @RequestBody Map<String, String> request) {
+        String userEmail = request.get("email");
+        if (userEmail == null || userEmail.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        // Use the newly created LeaveGroupUseCase (injected via constructor)
+        return ResponseEntity.ok(leaveGroupUseCase.execute(groupId, userEmail));
+    }
 }
+

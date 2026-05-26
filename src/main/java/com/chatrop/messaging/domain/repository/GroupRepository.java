@@ -8,4 +8,5 @@ public interface GroupRepository {
     Group save(Group group);
     Optional<Group> findById(String id);
     List<Group> findByMemberEmail(String email);
+    List<Group> findAll();
 }

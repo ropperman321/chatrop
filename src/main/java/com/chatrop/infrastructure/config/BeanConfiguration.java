@@ -57,8 +57,9 @@ public class BeanConfiguration {
 
     @Bean
     public com.chatrop.messaging.application.usecase.GetGroupHistoryUseCase getGroupHistoryUseCase(
-            MessageRepository messageRepository) {
-        return new com.chatrop.messaging.application.usecase.GetGroupHistoryUseCase(messageRepository);
+            MessageRepository messageRepository,
+            GroupRepository groupRepository) {
+        return new com.chatrop.messaging.application.usecase.GetGroupHistoryUseCase(messageRepository, groupRepository);
     }
 
     @Bean
@@ -81,5 +82,10 @@ public class BeanConfiguration {
             MessageRepository messageRepository,
             UserRepository userRepository) {
         return new GetDirectChatsUseCase(messageRepository, userRepository);
+    }
+
+    @Bean
+    public com.chatrop.messaging.application.usecase.LeaveGroupUseCase leaveGroupUseCase(GroupRepository groupRepository) {
+        return new com.chatrop.messaging.application.usecase.LeaveGroupUseCase(groupRepository);
     }
 }

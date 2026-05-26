@@ -41,6 +41,14 @@ public class PostgresGroupRepositoryAdapter implements GroupRepository {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<Group> findAll() {
+        return jpaGroupRepository.findAll()
+                .stream()
+                .map(this::toDomain)
+                .collect(Collectors.toList());
+    }
+
     private GroupEntity toEntity(Group domain) {
         GroupEntity entity = new GroupEntity();
         entity.setId(domain.getId());

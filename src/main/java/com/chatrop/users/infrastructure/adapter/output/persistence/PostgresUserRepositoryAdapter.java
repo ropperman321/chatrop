@@ -40,4 +40,11 @@ public class PostgresUserRepositoryAdapter implements UserRepository {
     public Optional<User> findById(UUID id) {
         return jpaRepository.findById(id).map(mapper::toDomain);
     }
+
+    @Override
+    public java.util.List<User> findAll() {
+        return jpaRepository.findAll().stream()
+                .map(mapper::toDomain)
+                .collect(java.util.stream.Collectors.toList());
+    }
 }
