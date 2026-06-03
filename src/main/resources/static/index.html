@@ -94,12 +94,17 @@
                    class="w-full px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-white text-sm placeholder-slate-600 ring-focus transition-all">
             <input id="login-password" type="password" autocomplete="current-password"
                    placeholder="Contraseña" value="password"
-                   onkeypress="if(event.key==='Enter') login()"
+                   onkeypress="if(event.key==='Enter') { authMode === 'login' ? login() : register(); }"
                    class="w-full px-4 py-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-white text-sm placeholder-slate-600 ring-focus transition-all">
             <button id="login-btn" onclick="login()"
                     class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-bold shadow-lg shadow-indigo-500/30 transition-all active:scale-95">
                 Entrar
             </button>
+            <div class="text-center mt-4">
+                <a id="toggle-auth-mode-link" onclick="toggleAuthMode()" class="text-slate-400 text-xs cursor-pointer select-none">
+                    ¿No tienes una cuenta? <span class="text-indigo-400 font-semibold hover:underline">Regístrate</span>
+                </a>
+            </div>
         </div>
         <p id="login-error" class="hidden text-rose-400 text-xs text-center mt-3"></p>
     </div>
@@ -282,6 +287,54 @@ let allItems = [];
 window.onload = () => {
     if (token && currentUserEmail && currentUserId) showChatApp();
 };
+
+// ── Auth Mode Toggle & Register ────────────────────────
+let authMode = 'login';
+function toggleAuthMode() {
+    authMode = authMode === 'login' ? 'register' : 'login';
+    const btn = q('login-btn');
+    const toggleLink = q('toggle-auth-mode-link');
+    const errEl = q('login-error');
+    
+    errEl.classList.add('hidden');
+    if (authMode === 'login') {
+        btn.textContent = 'Entrar';
+        btn.setAttribute('onclick', 'login()');
+        toggleLink.innerHTML = '¿No tienes una cuenta? <span class="text-indigo-400 font-semibold hover:underline">Regístrate</span>';
+    } else {
+        btn.textContent = 'Registrarse';
+        btn.setAttribute('onclick', 'register()');
+        toggleLink.innerHTML = '¿Ya tienes una cuenta? <span class="text-indigo-400 font-semibold hover:underline">Inicia sesión</span>';
+    }
+}
+
+async function register() {
+    const email    = q('login-email').value.trim();
+    const password = q('login-password').value;
+    const btn      = q('login-btn');
+    const errEl    = q('login-error');
+    errEl.classList.add('hidden');
+    btn.disabled = true; btn.textContent = 'Registrando…';
+
+    try {
+        const res = await api('/api/users/register', 'POST', { email, password }, false);
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || 'Error al registrar el usuario');
+        }
+        authMode = 'register';
+        toggleAuthMode();
+        errEl.textContent = 'Usuario registrado con éxito. ¡Ya puedes iniciar sesión!';
+        errEl.className = 'text-emerald-400 text-xs text-center mt-3';
+        errEl.classList.remove('hidden');
+    } catch (e) {
+        errEl.textContent = e.message;
+        errEl.className = 'text-rose-400 text-xs text-center mt-3';
+        errEl.classList.remove('hidden');
+    } finally {
+        btn.disabled = false;
+    }
+}
 
 // ── Login ──────────────────────────────────────────────
 async function login() {

@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: chatrop-db
+    environment:
+      POSTGRES_DB: chatrop
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pass
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d chatrop"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  app:
+    build: .
+    container_name: chatrop-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/chatrop
+      DB_USER: postgres
+      DB_PASSWORD: pass
+      app.cors.allowed-origins: "http://localhost:8082,http://localhost:8080,https://*.trycloudflare.com,https://*.cloudflare.com,*"
+    ports:
+      - "8082:8080"
+    restart: unless-stopped
+
+  # El túnel de Cloudflare
+  cloudflare-tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflare-tunnel
+    restart: always
+    command: tunnel --no-autoupdate run --token eyJhIjoiMDYyNGNmNDcxY2M5ZGY5YjllNDU0MjE2ODI1MTllMDUiLCJ0IjoiNTM3NWEzMTAtYWQ5NS00N2M0LWI0OWUtMDcxNTdkYjJiMjZhIiwicyI6IlpEUTRaV0ZrWm1ZdE5EQmtaUzAwTVRJM0xXRTRaRFl0TWpRMk56YzJPVFZtWmpVMSJ9
+    depends_on:
+      - app
