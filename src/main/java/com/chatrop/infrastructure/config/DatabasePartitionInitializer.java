@@ -76,6 +76,11 @@ public class DatabasePartitionInitializer implements InitializingBean {
             System.out.println("Ensuring partition: " + partitionName);
             jdbcTemplate.execute(ddl);
         }
+
+        // 3. Create composite index on parent partitioned table to automatically propagate to all partitions
+        System.out.println("Ensuring composite index idx_messages_group_timestamp exists...");
+        jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_messages_group_timestamp ON messages (group_id, timestamp ASC)");
+
         System.out.println("DatabasePartitionInitializer completed successfully.");
     }
 }

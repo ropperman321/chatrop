@@ -46,3 +46,15 @@ Este archivo registra las características principales añadidas y mejoradas en 
   - [DatabasePartitionInitializer.java](file:///Users/fjavp/dev/chatrop/src/main/java/com/chatrop/infrastructure/config/DatabasePartitionInitializer.java) (Creación dinámica de particiones mensuales en ejecución)
   - [MessageId.java](file:///Users/fjavp/dev/chatrop/src/main/java/com/chatrop/messaging/infrastructure/adapter/output/persistence/entity/MessageId.java)
   - [MessageEntity.java](file:///Users/fjavp/dev/chatrop/src/main/java/com/chatrop/messaging/infrastructure/adapter/output/persistence/entity/MessageEntity.java) (Uso de clave compuesta requerida para el particionamiento)
+
+## 7. Índice Compuesto para Consultas de Grupo
+- **Descripción**: Creación del índice compuesto `idx_messages_group_timestamp` sobre las columnas `(group_id, timestamp ASC)` en la tabla `messages`. Al definirlo en la tabla padre particionada, PostgreSQL lo propaga automáticamente a cada subpartición mensual. Esto elimina el costoso `filesort` en memoria RAM que ocurriría con un índice simple solo en `group_id`, permitiendo que las queries de historial de grupo sean O(log n) directamente desde el índice y sin ordenamiento adicional.
+- **Verificado en DB**:
+  ```
+  messages_y2026m05_group_id_timestamp_idx  →  messages_y2026m05
+  messages_y2026m06_group_id_timestamp_idx  →  messages_y2026m06
+  messages_y2026m07_group_id_timestamp_idx  →  messages_y2026m07
+  ... (se propaga a todas las futuras particiones)
+  ```
+- **Archivos Clave**:
+  - [DatabasePartitionInitializer.java](file:///Users/fjavp/dev/chatrop/src/main/java/com/chatrop/infrastructure/config/DatabasePartitionInitializer.java)
