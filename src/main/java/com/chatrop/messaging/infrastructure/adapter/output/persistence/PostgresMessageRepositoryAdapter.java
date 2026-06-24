@@ -28,7 +28,7 @@ public class PostgresMessageRepositoryAdapter implements MessageRepository {
     @SuppressWarnings("null")
     @Override
     public Optional<Message> findById(String id) {
-        return jpaMessageRepository.findById(UUID.fromString(id)).map(this::toDomain);
+        return jpaMessageRepository.findMessageById(UUID.fromString(id)).map(this::toDomain);
     }
 
     @Override

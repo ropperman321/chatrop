@@ -6,12 +6,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.chatrop.messaging.infrastructure.adapter.output.persistence.entity.MessageEntity;
+import com.chatrop.messaging.infrastructure.adapter.output.persistence.entity.MessageId;
 
 import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface JpaMessageRepository extends JpaRepository<MessageEntity, UUID> {
+public interface JpaMessageRepository extends JpaRepository<MessageEntity, MessageId> {
     // @Query("SELECT m FROM MessageEntity m WHERE (m.senderId = ?1 AND m.receiverId
     // = ?2) OR (m.senderId = ?2 AND m.receiverId = ?1) ORDER BY m.timestamp ASC")
     // List<MessageEntity> findMessagesBetweenUsers(String u1, String u2);
@@ -40,4 +41,7 @@ public interface JpaMessageRepository extends JpaRepository<MessageEntity, UUID>
            "(m.timestamp > (SELECT r.lastReadTimestamp FROM MessageReadStateEntity r WHERE r.userId = :userId AND r.peerId = :peerId) " +
            "OR NOT EXISTS (SELECT r FROM MessageReadStateEntity r WHERE r.userId = :userId AND r.peerId = :peerId))")
     long countUnreadDirectMessages(@Param("userId") String userId, @Param("peerId") String peerId);
+
+    @Query("SELECT m FROM MessageEntity m WHERE m.id = :id")
+    java.util.Optional<MessageEntity> findMessageById(@Param("id") UUID id);
 }

@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "messages")
+@IdClass(MessageId.class)
 @Getter
 @Setter
 @AllArgsConstructor
@@ -29,5 +30,8 @@ public class MessageEntity {
     private String groupId;
 
     private String content;
+
+    @Id
+    @Column(nullable = false)
     private LocalDateTime timestamp;
 }
